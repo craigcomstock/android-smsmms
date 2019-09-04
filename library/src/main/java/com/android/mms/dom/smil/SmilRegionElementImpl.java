@@ -16,13 +16,10 @@
 
 package com.android.mms.dom.smil;
 
-import com.android.mms.logs.LogTag;
-
 import org.w3c.dom.DOMException;
 import org.w3c.dom.smil.SMILDocument;
 import org.w3c.dom.smil.SMILRegionElement;
-
-import com.klinker.android.logger.Log;
+import timber.log.Timber;
 
 public class SmilRegionElementImpl extends SmilElementImpl implements
         SMILRegionElement {
@@ -47,8 +44,6 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
     private static final String RIGHT_ATTRIBUTE_NAME = "right";
     private static final String BOTTOM_ATTRIBUTE_NAME = "bottom";
     private static final String FIT_ATTRIBUTE_NAME = "fit";
-    private static final String TAG = LogTag.TAG;
-    private static final boolean DEBUG = false;
     private static final boolean LOCAL_LOGV = false;
 
     SmilRegionElementImpl(SmilDocumentImpl owner, String tagName) {
@@ -79,7 +74,7 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
             return parseRegionLength(getAttribute(LEFT_ATTRIBUTE_NAME), true);
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Left attribute is not set or incorrect.");
+                Timber.v("Left attribute is not set or incorrect.");
             }
         }
         try {
@@ -89,7 +84,7 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
             return bbw - right - width;
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Right or width attribute is not set or incorrect.");
+                Timber.v("Right or width attribute is not set or incorrect.");
             }
         }
         return 0;
@@ -100,7 +95,7 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
             return parseRegionLength(getAttribute(TOP_ATTRIBUTE_NAME), false);
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Top attribute is not set or incorrect.");
+                Timber.v("Top attribute is not set or incorrect.");
             }
         }
         try {
@@ -110,7 +105,7 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
             return bbh - bottom - height;
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Bottom or height attribute is not set or incorrect.");
+                Timber.v("Bottom or height attribute is not set or incorrect.");
             }
         }
         return 0;
@@ -163,7 +158,7 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
                         height;
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Height attribute is not set or incorrect.");
+                Timber.v("Height attribute is not set or incorrect.");
             }
         }
         int bbh = ((SMILDocument) getOwnerDocument()).getLayout().getRootLayout().getHeight();
@@ -171,14 +166,14 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
             bbh -= parseRegionLength(getAttribute(TOP_ATTRIBUTE_NAME), false);
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Top attribute is not set or incorrect.");
+                Timber.v("Top attribute is not set or incorrect.");
             }
         }
         try {
             bbh -= parseRegionLength(getAttribute(BOTTOM_ATTRIBUTE_NAME), false);
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Bottom attribute is not set or incorrect.");
+                Timber.v("Bottom attribute is not set or incorrect.");
             }
         }
         return bbh;
@@ -196,7 +191,7 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
                         width;
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Width attribute is not set or incorrect.");
+                Timber.v("Width attribute is not set or incorrect.");
             }
         }
         int bbw = ((SMILDocument) getOwnerDocument()).getLayout().getRootLayout().getWidth();
@@ -204,14 +199,14 @@ public class SmilRegionElementImpl extends SmilElementImpl implements
             bbw -= parseRegionLength(getAttribute(LEFT_ATTRIBUTE_NAME), true);
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Left attribute is not set or incorrect.");
+                Timber.v("Left attribute is not set or incorrect.");
             }
         }
         try {
             bbw -= parseRegionLength(getAttribute(RIGHT_ATTRIBUTE_NAME), true);
         } catch (NumberFormatException e) {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Right attribute is not set or incorrect.");
+                Timber.v("Right attribute is not set or incorrect.");
             }
         }
         return bbw;

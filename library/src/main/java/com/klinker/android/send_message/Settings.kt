@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 The Android Open Source Project
+ * Copyright 2013 Jacob Klinker
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.internal.telephony;
+package com.klinker.android.send_message
 
 /**
- * {@hide}
+ * Class to house all of the settings that can be used to send a message
  */
-@SuppressWarnings("serial")
-public class EncodeException extends Exception {
-    public EncodeException() {
-        super();
-    }
+class Settings @JvmOverloads constructor(
+        // MMS options
+        var mmsc: String? = "",
+        var proxy: String? = "",
+        var port: String? = "0",
+        var agent: String? = "",
+        var userProfileUrl: String? = "",
+        var uaProfTagName: String? = "",
 
-    public EncodeException(String s) {
-        super(s);
-    }
-
-    public EncodeException(char c) {
-        super("Unencodable char: '" + c + "'");
-    }
-}
-
+        // SMS options
+        var stripUnicode: Boolean = false)

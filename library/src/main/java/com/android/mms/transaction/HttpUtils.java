@@ -16,13 +16,12 @@
 
 package com.android.mms.transaction;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.net.SocketException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Locale;
-
+import android.content.Context;
+import android.net.http.AndroidHttpClient;
+import android.telephony.TelephonyManager;
+import android.text.TextUtils;
+import android.util.Config;
+import com.android.mms.MmsConfig;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -34,19 +33,16 @@ import org.apache.http.conn.params.ConnRouteParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
+import timber.log.Timber;
 
-import android.content.Context;
-import android.net.http.AndroidHttpClient;
-import android.telephony.TelephonyManager;
-import android.text.TextUtils;
-import android.util.Config;
-import com.klinker.android.logger.Log;
-
-import com.android.mms.logs.LogTag;
-import com.android.mms.MmsConfig;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Locale;
 
 public class HttpUtils {
-    private static final String TAG = LogTag.TRANSACTION;
 
     private static final boolean DEBUG = false;
     private static final boolean LOCAL_LOGV = DEBUG ? Config.LOGD : Config.LOGV;
@@ -97,19 +93,16 @@ public class HttpUtils {
             throw new IllegalArgumentException("URL must not be null.");
         }
 
-        if (Log.isLoggable(LogTag.TRANSACTION, Log.VERBOSE)) {
-            Log.v(TAG, "httpConnection: params list");
-            Log.v(TAG, "\ttoken\t\t= " + token);
-            Log.v(TAG, "\turl\t\t= " + url);
-            Log.v(TAG, "\tmethod\t\t= "
-                    + ((method == HTTP_POST_METHOD) ? "POST"
-                            : ((method == HTTP_GET_METHOD) ? "GET" : "UNKNOWN")));
-            Log.v(TAG, "\tisProxySet\t= " + isProxySet);
-            Log.v(TAG, "\tproxyHost\t= " + proxyHost);
-            Log.v(TAG, "\tproxyPort\t= " + proxyPort);
-            // TODO Print out binary data more readable.
-            //Log.v(TAG, "\tpdu\t\t= " + Arrays.toString(pdu));
-        }
+        Timber.v("httpConnection: params list");
+        Timber.v("\ttoken\t\t= " + token);
+        Timber.v("\turl\t\t= " + url);
+        Timber.v("\tmethod\t\t= " + ((method == HTTP_POST_METHOD) ? "POST"
+                : ((method == HTTP_GET_METHOD) ? "GET" : "UNKNOWN")));
+        Timber.v("\tisProxySet\t= " + isProxySet);
+        Timber.v("\tproxyHost\t= " + proxyHost);
+        Timber.v("\tproxyPort\t= " + proxyPort);
+        // TODO Print out binary data more readable.
+        //Timber.v("\tpdu\t\t= " + Arrays.toString(pdu));
 
         AndroidHttpClient client = null;
 
@@ -137,7 +130,7 @@ public class HttpUtils {
                     req = new HttpGet(url);
                     break;
                 default:
-                    Log.e(TAG, "Unknown HTTP method: " + method
+                    Timber.e("Unknown HTTP method: " + method
                             + ". Must be one of POST[" + HTTP_POST_METHOD
                             + "] or GET[" + HTTP_GET_METHOD + "].");
                     return null;
@@ -157,10 +150,7 @@ public class HttpUtils {
                 String xWapProfileTagName = MmsConfig.getUaProfTagName();
                 String xWapProfileUrl = MmsConfig.getUaProfUrl();
                 if (xWapProfileUrl != null) {
-                    if (Log.isLoggable(LogTag.TRANSACTION, Log.VERBOSE)) {
-                        Log.d(LogTag.TRANSACTION,
-                                "[HttpUtils] httpConn: xWapProfUrl=" + xWapProfileUrl);
-                    }
+                    Timber.d("[HttpUtils] httpConn: xWapProfUrl=" + xWapProfileUrl);
                     req.addHeader(xWapProfileTagName, xWapProfileUrl);
                 }
             }
@@ -216,12 +206,12 @@ public class HttpUtils {
                             try {
                                 dis.close();
                             } catch (IOException e) {
-                                Log.e(TAG, "Error closing input stream: " + e.getMessage());
+                                Timber.e("Error closing input stream: " + e.getMessage());
                             }
                         }
                     }
                     if (entity.isChunked()) {
-                        Log.v(TAG, "httpConnection: transfer encoding is chunked");
+                        Timber.v("httpConnection: transfer encoding is chunked");
                         int bytesTobeRead = MmsConfig.getMaxMessageSize();
                         byte[] tempBody = new byte[bytesTobeRead];
                         DataInputStream dis = new DataInputStream(entity.getContent());
@@ -234,8 +224,7 @@ public class HttpUtils {
                                     bytesRead = dis.read(tempBody, offset, bytesTobeRead);
                                 } catch (IOException e) {
                                     readError = true;
-                                    Log.e(TAG, "httpConnection: error reading input stream"
-                                        + e.getMessage());
+                                    Timber.e("httpConnection: error reading input stream" + e.getMessage());
                                     break;
                                 }
                                 if (bytesRead > 0) {
@@ -248,16 +237,15 @@ public class HttpUtils {
                                 // bytesRead will be -1 if the data was read till the eof
                                 body = new byte[offset];
                                 System.arraycopy(tempBody, 0, body, 0, offset);
-                                Log.v(TAG, "httpConnection: Chunked response length ["
-                                    + Integer.toString(offset) + "]");
+                                Timber.v("httpConnection: Chunked response length [" + Integer.toString(offset) + "]");
                             } else {
-                                Log.e(TAG, "httpConnection: Response entity too large or empty");
+                                Timber.e("httpConnection: Response entity too large or empty");
                             }
                         } finally {
                             try {
                                 dis.close();
                             } catch (IOException e) {
-                                Log.e(TAG, "Error closing input stream: " + e.getMessage());
+                                Timber.e("Error closing input stream: " + e.getMessage());
                             }
                         }
                     }
@@ -290,7 +278,7 @@ public class HttpUtils {
     private static void handleHttpConnectionException(Exception exception, String url)
             throws IOException {
         // Inner exception should be logged to make life easier.
-        Log.e(TAG, "Url: " + url + "\n" + exception.getMessage());
+        Timber.e("Url: " + url + "\n" + exception.getMessage());
         IOException e = new IOException(exception.getMessage());
         e.initCause(exception);
         throw e;
@@ -305,10 +293,7 @@ public class HttpUtils {
         // set the socket timeout
         int soTimeout = MmsConfig.getHttpSocketTimeout();
 
-        if (Log.isLoggable(LogTag.TRANSACTION, Log.DEBUG)) {
-            Log.d(TAG, "[HttpUtils] createHttpClient w/ socket timeout " + soTimeout + " ms, "
-                    + ", UA=" + userAgent);
-        }
+        Timber.d("[HttpUtils] createHttpClient w/ socket timeout " + soTimeout + " ms, " + ", UA=" + userAgent);
         HttpConnectionParams.setSoTimeout(params, soTimeout);
         return client;
     }

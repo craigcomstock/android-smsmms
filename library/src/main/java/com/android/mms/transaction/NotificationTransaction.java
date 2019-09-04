@@ -28,8 +28,6 @@ import android.provider.Telephony.Mms;
 import android.provider.Telephony.Mms.Inbox;
 import android.provider.Telephony.Threads;
 import android.telephony.TelephonyManager;
-
-import com.android.mms.logs.LogTag;
 import com.android.mms.MmsConfig;
 import com.android.mms.util.DownloadManager;
 import com.google.android.mms.MmsException;
@@ -40,18 +38,13 @@ import com.google.android.mms.pdu_alt.PduComposer;
 import com.google.android.mms.pdu_alt.PduHeaders;
 import com.google.android.mms.pdu_alt.PduParser;
 import com.google.android.mms.pdu_alt.PduPersister;
-import com.klinker.android.logger.Log;
 import com.klinker.android.send_message.BroadcastUtils;
+import timber.log.Timber;
 
 import java.io.IOException;
 
-import static com.android.mms.transaction.TransactionState.FAILED;
-import static com.android.mms.transaction.TransactionState.INITIALIZED;
-import static com.android.mms.transaction.TransactionState.SUCCESS;
-import static com.google.android.mms.pdu_alt.PduHeaders.MESSAGE_TYPE_RETRIEVE_CONF;
-import static com.google.android.mms.pdu_alt.PduHeaders.STATUS_DEFERRED;
-import static com.google.android.mms.pdu_alt.PduHeaders.STATUS_RETRIEVED;
-import static com.google.android.mms.pdu_alt.PduHeaders.STATUS_UNRECOGNIZED;
+import static com.android.mms.transaction.TransactionState.*;
+import static com.google.android.mms.pdu_alt.PduHeaders.*;
 
 /**
  * The NotificationTransaction is responsible for handling multimedia
@@ -70,8 +63,6 @@ import static com.google.android.mms.pdu_alt.PduHeaders.STATUS_UNRECOGNIZED;
  * in case the client is in immediate retrieve mode.
  */
 public class NotificationTransaction extends Transaction implements Runnable {
-    private static final String TAG = LogTag.TAG;
-    private static final boolean DEBUG = false;
     private static final boolean LOCAL_LOGV = false;
 
     private Uri mUri;
@@ -89,7 +80,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
             mNotificationInd = (NotificationInd)
                     PduPersister.getPduPersister(context).load(mUri);
         } catch (MmsException e) {
-            Log.e(TAG, "Failed to load NotificationInd from: " + uriString, e);
+            Timber.e(e, "Failed to load NotificationInd from: " + uriString);
             throw new IllegalArgumentException();
         }
 
@@ -111,18 +102,11 @@ public class NotificationTransaction extends Transaction implements Runnable {
         try {
             // Save the pdu. If we can start downloading the real pdu immediately, don't allow
             // persist() to create a thread for the notificationInd because it causes UI jank.
-            boolean group;
-
-            try {
-                group = com.klinker.android.send_message.Transaction.settings.getGroup();
-            } catch (Exception e) {
-                group = PreferenceManager.getDefaultSharedPreferences(context).getBoolean("group_message", true);
-            }
             mUri = PduPersister.getPduPersister(context).persist(
                         ind, Inbox.CONTENT_URI, !allowAutoDownload(mContext),
-                        group, null);
+                    true, null);
         } catch (MmsException e) {
-            Log.e(TAG, "Failed to save NotificationInd in constructor.", e);
+            Timber.e(e, "Failed to save NotificationInd in constructor.");
             throw new IllegalArgumentException();
         }
 
@@ -154,7 +138,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
         boolean autoDownload = allowAutoDownload(mContext);
         try {
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Notification transaction launched: " + this);
+                Timber.v("Notification transaction launched: " + this);
             }
 
             // By default, we set status to STATUS_DEFERRED because we
@@ -171,7 +155,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
             downloadManager.markState(mUri, DownloadManager.STATE_DOWNLOADING);
 
             if (LOCAL_LOGV) {
-                Log.v(TAG, "Content-Location: " + mContentLocation);
+                Timber.v("Content-Location: " + mContentLocation);
             }
 
             byte[] retrieveConfData = null;
@@ -186,7 +170,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
             if (retrieveConfData != null) {
                 GenericPdu pdu = new PduParser(retrieveConfData).parse();
                 if ((pdu == null) || (pdu.getMessageType() != MESSAGE_TYPE_RETRIEVE_CONF)) {
-                    Log.e(TAG, "Invalid M-RETRIEVE.CONF PDU. " +
+                    Timber.e("Invalid M-RETRIEVE.CONF PDU. " +
                             (pdu != null ? "message type: " + pdu.getMessageType() : "null pdu"));
                     mTransactionState.setState(FAILED);
                     status = STATUS_UNRECOGNIZED;
@@ -194,7 +178,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
                     // Save the received PDU (must be a M-RETRIEVE.CONF).
                     PduPersister p = PduPersister.getPduPersister(mContext);
                     Uri uri = p.persist(pdu, Inbox.CONTENT_URI, true,
-                            com.klinker.android.send_message.Transaction.settings.getGroup(), null);
+                            true, null);
 
                     // Use local time instead of PDU time
                     ContentValues values = new ContentValues(1);
@@ -206,7 +190,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
                     // M-NotifyResp.ind from Inbox.
                     SqliteWrapper.delete(mContext, mContext.getContentResolver(),
                                          mUri, null, null);
-                    Log.v(TAG, "NotificationTransaction received new mms message: " + uri);
+                    Timber.v("NotificationTransaction received new mms message: " + uri);
                     // Delete obsolete threads
                     SqliteWrapper.delete(mContext, mContext.getContentResolver(),
                             Threads.OBSOLETE_THREADS_URI, null, null);
@@ -222,7 +206,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
             }
 
             if (LOCAL_LOGV) {
-                Log.v(TAG, "status=0x" + Integer.toHexString(status));
+                Timber.v("status=0x" + Integer.toHexString(status));
             }
 
             // Check the status and update the result state of this Transaction.
@@ -240,7 +224,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
 
             sendNotifyRespInd(status);
         } catch (Throwable t) {
-            Log.e(TAG, "error", t);
+            Timber.e(t, "error");
         } finally {
             mTransactionState.setContentUri(mUri);
             if (!autoDownload) {
@@ -250,7 +234,7 @@ public class NotificationTransaction extends Transaction implements Runnable {
             }
             if (mTransactionState.getState() != SUCCESS) {
                 mTransactionState.setState(FAILED);
-                Log.e(TAG, "NotificationTransaction failed.");
+                Timber.e("NotificationTransaction failed.");
             }
             notifyObservers();
         }

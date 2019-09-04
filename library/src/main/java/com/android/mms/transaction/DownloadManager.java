@@ -10,17 +10,15 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SqliteWrapper;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
-
 import com.android.mms.MmsConfig;
-import com.klinker.android.logger.Log;
 import com.klinker.android.send_message.BroadcastUtils;
 import com.klinker.android.send_message.MmsReceivedReceiver;
+import timber.log.Timber;
 
 import java.io.File;
 import java.util.Random;
@@ -32,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * We should manage to call SMSManager.downloadMultimediaMessage().
  */
 public class DownloadManager {
-    private static final String TAG = "DownloadManager";
     private static DownloadManager ourInstance = new DownloadManager();
     private static final ConcurrentHashMap<String, MmsDownloadReceiver> mMap = new ConcurrentHashMap<>();
 
@@ -60,7 +57,7 @@ public class DownloadManager {
         // Use unique action in order to avoid cancellation of notifying download result.
         context.getApplicationContext().registerReceiver(receiver, new IntentFilter(receiver.mAction));
 
-        Log.v(TAG, "receiving with system method");
+        Timber.v("receiving with system method");
         final String fileName = "download." + String.valueOf(Math.abs(new Random().nextLong())) + ".dat";
         File mDownloadFile = new File(context.getCacheDir(), fileName);
         Uri contentUri = (new Uri.Builder())
@@ -122,10 +119,6 @@ public class DownloadManager {
     }
 
     private static boolean isNotificationExist(Context context, String location) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            return true;
-        }
-
         String selection = Telephony.Mms.CONTENT_LOCATION + " = ?";
         String[] selectionArgs = new String[] { location };
         Cursor c = SqliteWrapper.query(

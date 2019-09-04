@@ -16,12 +16,10 @@
 
 package com.google.android.mms.pdu_alt;
 
-import com.klinker.android.logger.Log;
-
 import com.google.android.mms.InvalidHeaderValueException;
+import timber.log.Timber;
 
 public class SendReq extends MultimediaMessagePdu {
-    private static final String TAG = "SendReq";
 
     public SendReq() {
         super();
@@ -36,7 +34,7 @@ public class SendReq extends MultimediaMessagePdu {
             setTransactionId(generateTransactionId());
         } catch (InvalidHeaderValueException e) {
             // Impossible to reach here since all headers we set above are valid.
-            Log.e(TAG, "Unexpected InvalidHeaderValueException.", e);
+            Timber.e(e, "Unexpected InvalidHeaderValueException.");
             throw new RuntimeException(e);
         }
     }
